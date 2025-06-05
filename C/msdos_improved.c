@@ -657,7 +657,7 @@ static void dos_int21(system__s *sys)
 
 /********************************************************************/
 
-/* Simple x86 instruction decoder and executor */
+/* Enhanced x86 instruction decoder and executor */
 static bool execute_instruction(system__s *sys)
 {
   unsigned char *mem = sys->mem;
@@ -665,11 +665,200 @@ static bool execute_instruction(system__s *sys)
   uint8_t opcode = mem[ip_addr];
   bool executed = true;
   
-  /* Basic instruction handling - just enough for Racter */
+  if (sys->debug)
+    fprintf(stderr, "Execute: %04X:%04X: %02X\n", sys->regs.cs, (uint16_t)sys->regs.eip, opcode);
+  
+  /* Enhanced instruction handling */
   switch(opcode)
   {
     case 0x90: /* NOP */
       sys->regs.eip++;
+      break;
+      
+    /* MOV immediate to register instructions */
+    case 0xB0: /* MOV AL, imm8 */
+      sys->regs.eax = (sys->regs.eax & 0xFFFFFF00) | mem[ip_addr + 1];
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB1: /* MOV CL, imm8 */
+      sys->regs.ecx = (sys->regs.ecx & 0xFFFFFF00) | mem[ip_addr + 1];
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB2: /* MOV DL, imm8 */
+      sys->regs.edx = (sys->regs.edx & 0xFFFFFF00) | mem[ip_addr + 1];
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB3: /* MOV BL, imm8 */
+      sys->regs.ebx = (sys->regs.ebx & 0xFFFFFF00) | mem[ip_addr + 1];
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB4: /* MOV AH, imm8 */
+      sys->regs.eax = (sys->regs.eax & 0xFFFF00FF) | ((uint32_t)mem[ip_addr + 1] << 8);
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB5: /* MOV CH, imm8 */
+      sys->regs.ecx = (sys->regs.ecx & 0xFFFF00FF) | ((uint32_t)mem[ip_addr + 1] << 8);
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB6: /* MOV DH, imm8 */
+      sys->regs.edx = (sys->regs.edx & 0xFFFF00FF) | ((uint32_t)mem[ip_addr + 1] << 8);
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB7: /* MOV BH, imm8 */
+      sys->regs.ebx = (sys->regs.ebx & 0xFFFF00FF) | ((uint32_t)mem[ip_addr + 1] << 8);
+      sys->regs.eip += 2;
+      break;
+      
+    case 0xB8: /* MOV EAX/AX, imm16/32 */
+      sys->regs.eax = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    case 0xB9: /* MOV ECX/CX, imm16/32 */
+      sys->regs.ecx = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    case 0xBA: /* MOV EDX/DX, imm16/32 */
+      sys->regs.edx = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    case 0xBB: /* MOV EBX/BX, imm16/32 */
+      sys->regs.ebx = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    case 0xBC: /* MOV ESP/SP, imm16/32 */
+      sys->regs.esp = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    case 0xBD: /* MOV EBP/BP, imm16/32 */
+      sys->regs.ebp = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    case 0xBE: /* MOV ESI/SI, imm16/32 */
+      sys->regs.esi = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    case 0xBF: /* MOV EDI/DI, imm16/32 */
+      sys->regs.edi = get_word(mem, ip_addr + 1);
+      sys->regs.eip += 3;
+      break;
+      
+    /* MOV register to register */
+    case 0x88: /* MOV r/m8, r8 */
+      {
+        uint8_t modrm = mem[ip_addr + 1];
+        uint8_t mod = (modrm >> 6) & 3;
+        uint8_t reg = (modrm >> 3) & 7;
+        uint8_t rm = modrm & 7;
+        
+        if (mod == 3) /* Register to register */
+        {
+          uint8_t src_val = 0;
+          switch(reg)
+          {
+            case 0: src_val = sys->regs.eax & 0xFF; break; /* AL */
+            case 1: src_val = sys->regs.ecx & 0xFF; break; /* CL */
+            case 2: src_val = sys->regs.edx & 0xFF; break; /* DL */
+            case 3: src_val = sys->regs.ebx & 0xFF; break; /* BL */
+            case 4: src_val = (sys->regs.eax >> 8) & 0xFF; break; /* AH */
+            case 5: src_val = (sys->regs.ecx >> 8) & 0xFF; break; /* CH */
+            case 6: src_val = (sys->regs.edx >> 8) & 0xFF; break; /* DH */
+            case 7: src_val = (sys->regs.ebx >> 8) & 0xFF; break; /* BH */
+          }
+          
+          switch(rm)
+          {
+            case 0: sys->regs.eax = (sys->regs.eax & 0xFFFFFF00) | src_val; break; /* AL */
+            case 1: sys->regs.ecx = (sys->regs.ecx & 0xFFFFFF00) | src_val; break; /* CL */
+            case 2: sys->regs.edx = (sys->regs.edx & 0xFFFFFF00) | src_val; break; /* DL */
+            case 3: sys->regs.ebx = (sys->regs.ebx & 0xFFFFFF00) | src_val; break; /* BL */
+            case 4: sys->regs.eax = (sys->regs.eax & 0xFFFF00FF) | ((uint32_t)src_val << 8); break; /* AH */
+            case 5: sys->regs.ecx = (sys->regs.ecx & 0xFFFF00FF) | ((uint32_t)src_val << 8); break; /* CH */
+            case 6: sys->regs.edx = (sys->regs.edx & 0xFFFF00FF) | ((uint32_t)src_val << 8); break; /* DH */
+            case 7: sys->regs.ebx = (sys->regs.ebx & 0xFFFF00FF) | ((uint32_t)src_val << 8); break; /* BH */
+          }
+        }
+        sys->regs.eip += 2;
+      }
+      break;
+      
+    /* Compare instructions */
+    case 0x3C: /* CMP AL, imm8 */
+      {
+        uint8_t al = sys->regs.eax & 0xFF;
+        uint8_t imm = mem[ip_addr + 1];
+        uint16_t result = al - imm;
+        
+        /* Set flags */
+        sys->regs.eflags &= ~(0x0001 | 0x0040 | 0x0080); /* Clear CF, ZF, SF */
+        if (result == 0) sys->regs.eflags |= 0x0040; /* ZF */
+        if (result & 0x8000) sys->regs.eflags |= 0x0080; /* SF */
+        if (al < imm) sys->regs.eflags |= 0x0001; /* CF */
+        
+        sys->regs.eip += 2;
+      }
+      break;
+      
+    /* Jump instructions */
+    case 0x75: /* JNZ/JNE rel8 */
+      {
+        int8_t rel = (int8_t)mem[ip_addr + 1];
+        sys->regs.eip += 2;
+        if (!(sys->regs.eflags & 0x0040)) /* ZF clear */
+        {
+          sys->regs.eip = (sys->regs.eip + rel) & 0xFFFF;
+        }
+      }
+      break;
+      
+    case 0x74: /* JZ/JE rel8 */
+      {
+        int8_t rel = (int8_t)mem[ip_addr + 1];
+        sys->regs.eip += 2;
+        if (sys->regs.eflags & 0x0040) /* ZF set */
+        {
+          sys->regs.eip = (sys->regs.eip + rel) & 0xFFFF;
+        }
+      }
+      break;
+      
+    case 0xEB: /* JMP rel8 */
+      {
+        int8_t rel = (int8_t)mem[ip_addr + 1];
+        sys->regs.eip = (sys->regs.eip + 2 + rel) & 0xFFFF;
+      }
+      break;
+      
+    /* Push/Pop instructions */
+    case 0x50: /* PUSH EAX/AX */
+      {
+        size_t sp_addr = seg_off_to_linear(sys->regs.ss, (sys->regs.esp - 2) & 0xFFFF);
+        set_word(mem, sp_addr, sys->regs.eax & 0xFFFF);
+        sys->regs.esp = (sys->regs.esp - 2) & 0xFFFF;
+        sys->regs.eip++;
+      }
+      break;
+      
+    case 0x58: /* POP EAX/AX */
+      {
+        size_t sp_addr = seg_off_to_linear(sys->regs.ss, sys->regs.esp & 0xFFFF);
+        sys->regs.eax = (sys->regs.eax & 0xFFFF0000) | get_word(mem, sp_addr);
+        sys->regs.esp = (sys->regs.esp + 2) & 0xFFFF;
+        sys->regs.eip++;
+      }
       break;
       
     case 0xCD: /* INT instruction */
@@ -723,7 +912,6 @@ static bool execute_instruction(system__s *sys)
       
     default:
       /* For unhandled opcodes, skip the instruction and hope for the best */
-      /* This is a terrible hack but might work for simple programs */
       if (sys->debug)
       {
         fprintf(stderr, "Unhandled opcode at %04X:%04X: %02X\n", 

@@ -80,11 +80,21 @@ class DOSEmulatorTest:
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=False  # Use binary mode to handle all bytes
             )
             
             # Send input if provided
-            stdout, stderr = proc.communicate(input=input_data, timeout=timeout)
+            input_bytes = input_data.encode('utf-8') if input_data else None
+            stdout, stderr = proc.communicate(input=input_bytes, timeout=timeout)
+            
+            # Decode output safely
+            try:
+                stdout = stdout.decode('utf-8')
+                stderr = stderr.decode('utf-8')
+            except UnicodeDecodeError:
+                # Handle binary output
+                stdout = repr(stdout)
+                stderr = repr(stderr)
             
             # Check if process exited cleanly
             if proc.returncode != 0:
@@ -206,9 +216,9 @@ class DOSEmulatorTest:
         
         try:
             self.run_test(
-                "Prompt detection test",
+                "Prompt detection test", 
                 prog,
-                expected_output="\r\n>",
+                expected_output="\r\n>",  # This should match the actual CR LF > output
                 timeout=2
             )
         finally:
