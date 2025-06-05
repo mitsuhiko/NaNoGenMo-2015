@@ -476,9 +476,18 @@ static void dos_int21(system__s *sys)
   {
     case 0x01: /* Read character with echo */
       {
-        int c;
-        if (sys->input)
+        int c = read_buffered_input(sys);
+        if (c >= 0)
         {
+          sys->regs.eax = (sys->regs.eax & 0xFF00) | (c & 0xFF);
+          if (c != '\n')
+            putchar(c);
+          fflush(stdout);
+        }
+        else
+        {
+          /* No input available, try to wait a bit for piped input */
+          usleep(1000); /* 1ms */
           c = read_buffered_input(sys);
           if (c >= 0)
           {
@@ -489,14 +498,9 @@ static void dos_int21(system__s *sys)
           }
           else
           {
-            /* No input available, return without blocking */
+            /* Still no input, return without blocking */
             sys->regs.eax = (sys->regs.eax & 0xFF00);
           }
-        }
-        else
-        {
-          /* Not in input mode, return null */
-          sys->regs.eax = (sys->regs.eax & 0xFF00);
         }
       }
       break;
