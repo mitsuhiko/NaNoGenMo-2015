@@ -28,8 +28,14 @@ LDLIBS = -lcgi6
 
 .PHONY: all clean
 
-all : msdos
+all : msdos_portable
 clean:
-	$(RM) *~ *.o msdos core.* msdos.core
+	$(RM) *~ *.o msdos msdos_portable core.* msdos.core
 
-msdos:
+# Original Linux-only version (requires 32-bit Linux with vm86)
+msdos: msdos.c
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) $(LDLIBS)
+
+# Portable version that works on macOS and modern systems
+msdos_portable: msdos_portable.c
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)

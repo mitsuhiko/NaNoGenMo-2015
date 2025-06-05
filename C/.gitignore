@@ -1,0 +1,16 @@
+# Compiled executables
+msdos
+msdos_portable
+
+# Debug symbols
+*.dSYM/
+
+# Object files
+*.o
+
+# Core dumps
+core.*
+msdos.core
+
+# Backup files
+*~

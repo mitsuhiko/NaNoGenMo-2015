@@ -144,7 +144,7 @@ if racterid == 0 then
   from_eliza.read:close()
   from_eliza.write:close()
   
-  process.exec("/home/spc/writings/nanogenmo/2015/C/msdos",{ "RACTER.EXE" })
+  process.exec("./C/msdos_portable",{ "/tmp/racter/RACTER.EXE" })
   process.exit(9)
 else
   print("RACTER",racterid)
