@@ -59,11 +59,18 @@ couch.lua
   - org.conman.{syslog, errno, fsys, process, signal, math}
   - LPeg
 
+## Recent Improvements
+
+- **Fixed pipe handling issues**: Added non-blocking I/O and input buffering to prevent deadlocks
+- **Added DOS INT 21h AH=01h**: Character input with echo function for proper ELIZA communication
+- **Enhanced prompt detection**: Improved "CR LF >" sequence detection with proper buffering
+- **Docker support**: Cross-platform execution via Docker containers
+
 ## Known Issues
 
-- Frequent deadlocks after ~4,000 words due to pipe race conditions
 - The MS-DOS emulator (`msdos`) implements basic DOS functions needed for Racter with enhanced pipe I/O handling
 - Project outputs in novel/ directory (4 files, ~16k words total)
+- May still experience occasional communication issues with very long conversations
 
 ## Key Implementation Details
 

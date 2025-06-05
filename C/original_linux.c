@@ -1,22 +1,12 @@
 /************************************************************************
 *
 * Copyright 2015 by Sean Conner.  All Rights Reserved.
+* Modified for Linux Docker environment
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
 * as published by the Free Software Foundation; either version 2
 * of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*
-* Comments, questions and criticisms can be sent to: sean@conman.org
 *
 *************************************************************************/
 
@@ -24,11 +14,6 @@
 /* http://www.ecstaticlyrics.com/notes/vm86 */
 /* http://stanislavs.org/helppc/int_21.html */
 /* http://www.oldlinux.org/Linux.old/docs/interrupts/int-html/int-21.htm */
-/* environment:		*/
-/*	PATH=		*/
-/*	COMSPEC=	*/
-/*	PROMPT=		*/
-/*	TMP=		*/
 
 #include <stddef.h>
 #include <stdio.h>
@@ -46,7 +31,6 @@
 #include <unistd.h>
 #include <sys/vm86.h>
 #include <sys/mman.h>
-#include <fcntl.h>
 
 #define SEG_ENV		0x1000
 #define SEG_PSP		0x2000
@@ -147,11 +131,6 @@ typedef struct system
   
   bool input;
   char prompt[4];
-  
-  /* Input buffer for better pipe handling */
-  char input_buffer[256];
-  int input_len;
-  int input_pos;
 } system__s;
 
 /********************************************************************/
@@ -435,49 +414,6 @@ static int open_file(system__s *sys,fcb__s *fcb,bool create)
 
 /********************************************************************/
 
-static void handle_prompt_detection(system__s *sys, char c)
-{
-  /* Handle Racter prompt detection */
-  memmove(&sys->prompt[0], &sys->prompt[1], 3);
-  sys->prompt[3] = c;
-  
-  if (sys->prompt[1] == '\r' && sys->prompt[2] == '\n' && sys->prompt[3] == '>')
-  {
-    sys->input = true;
-    fflush(stdout);
-  }
-  else if (c == '\r')
-  {
-    sys->input = false;
-  }
-}
-
-/********************************************************************/
-
-static int read_buffered_input(system__s *sys)
-{
-  if (sys->input_pos < sys->input_len)
-  {
-    return sys->input_buffer[sys->input_pos++];
-  }
-  
-  /* Check if input is available without blocking */
-  struct pollfd pfd = { .fd = 0, .events = POLLIN };
-  if (poll(&pfd, 1, 0) > 0)
-  {
-    sys->input_len = read(0, sys->input_buffer, sizeof(sys->input_buffer) - 1);
-    if (sys->input_len > 0)
-    {
-      sys->input_pos = 0;
-      return sys->input_buffer[sys->input_pos++];
-    }
-  }
-  
-  return -1;
-}
-
-/********************************************************************/
-
 static void ms_dos(system__s *sys)
 {
   int            ah;
@@ -499,56 +435,48 @@ static void ms_dos(system__s *sys)
     case 0:	/* exit */
          exit(100);
     
-    case 0x01: /* Read character with echo */
-         {
-           int c = read_buffered_input(sys);
-           if (c >= 0)
-           {
-             sys->vm.regs.eax = (sys->vm.regs.eax & 0xFF00) | (c & 0xFF);
-             if (c != '\n')
-               putchar(c);
-             fflush(stdout);
-           }
-           else
-           {
-             /* No input available, try to wait a bit for piped input */
-             usleep(1000); /* 1ms */
-             c = read_buffered_input(sys);
-             if (c >= 0)
-             {
-               sys->vm.regs.eax = (sys->vm.regs.eax & 0xFF00) | (c & 0xFF);
-               if (c != '\n')
-                 putchar(c);
-               fflush(stdout);
-             }
-             else
-             {
-               /* Still no input, return without blocking */
-               sys->vm.regs.eax = (sys->vm.regs.eax & 0xFF00);
-             }
-           }
-         }
-         break;
-    
     case 0x06: /* direct console I/O */
          dl = sys->vm.regs.edx & 255;
-         if (dl == 0xFF) /* Input */
-         {
-           int c = read_buffered_input(sys);
-           if (c >= 0)
-           {
-             sys->vm.regs.eax = (sys->vm.regs.eax & 0xFF00) | (c & 0xFF);
-             sys->vm.regs.eflags &= ~0x40; /* Clear ZF */
-           }
-           else
-           {
-             sys->vm.regs.eflags |= 0x40; /* Set ZF */
-           }
-         }
-         else /* Output */
+         if (dl < 255)
          {
            putchar(dl);
-           handle_prompt_detection(sys, dl);
+           sys->vm.regs.eax &= 0xFF;
+           sys->vm.regs.eax |= dl;
+           sys->prompt[0]    = sys->prompt[1];
+           sys->prompt[1]    = sys->prompt[2];
+           sys->prompt[2]    = dl;
+         }
+         
+         /*--------------------------------------------------------
+         ; Erm ... okay ... you are not expected to understand this.
+         ; I'm not sure I do.
+         ;--------------------------------------------------------*/
+         
+         else
+         {
+           if (!sys->input)
+           {
+             if (strcmp(sys->prompt,"\r\n>") == 0)
+               sys->input = true;
+             else
+             {
+               sys->vm.regs.eflags |= 0x40;
+               sys->vm.regs.eax    &= 0xFF;
+               return;
+             }
+           }
+           
+           c = getchar();
+           
+           if (c == '\n')
+           {
+             sys->input = false;
+             c = '\r';
+           }
+           
+           sys->vm.regs.eflags &= ~0x40;
+           sys->vm.regs.eax    &= ~255;
+           sys->vm.regs.eax    |= c;
          }
          break;
     
