@@ -4,13 +4,9 @@
 
 all: test
 
-test: ../msdos
+test:
 	@echo "Running DOS emulator tests..."
 	./run_tests.sh
-
-../msdos:
-	@echo "Building emulator..."
-	cd .. && $(MAKE) msdos
 
 # Individual test targets
 test-basic:
