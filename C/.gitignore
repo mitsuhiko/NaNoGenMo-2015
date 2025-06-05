@@ -1,6 +1,7 @@
 # Compiled executables
 msdos
 msdos_portable
+msdos_improved
 
 # Debug symbols
 *.dSYM/

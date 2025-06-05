@@ -28,9 +28,9 @@ LDLIBS = -lcgi6
 
 .PHONY: all clean
 
-all : msdos_portable
+all : msdos_improved
 clean:
-	$(RM) *~ *.o msdos msdos_portable core.* msdos.core
+	$(RM) *~ *.o msdos msdos_portable msdos_improved core.* msdos.core
 
 # Original Linux-only version (requires 32-bit Linux with vm86)
 msdos: msdos.c
@@ -38,4 +38,8 @@ msdos: msdos.c
 
 # Portable version that works on macOS and modern systems
 msdos_portable: msdos_portable.c
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+# Improved version with better I/O handling for pipes
+msdos_improved: msdos_improved.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
