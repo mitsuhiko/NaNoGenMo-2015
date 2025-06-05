@@ -13,7 +13,7 @@ import threading
 import queue
 
 class DOSEmulatorTest:
-    def __init__(self, emulator_path="../msdos_improved"):
+    def __init__(self, emulator_path="../msdos"):
         self.emulator = emulator_path
         self.test_dir = os.path.dirname(os.path.abspath(__file__))
         self.passed = 0

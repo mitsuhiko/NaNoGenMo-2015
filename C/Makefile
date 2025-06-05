@@ -28,9 +28,9 @@ LDLIBS = -lcgi6
 
 .PHONY: all clean
 
-all : msdos_improved
+all : msdos
 clean:
-	$(RM) *~ *.o msdos_improved core.* msdos.core
+	$(RM) *~ *.o msdos core.* msdos.core
 
-msdos_improved: msdos_improved.c
+msdos: msdos.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)

@@ -7,10 +7,10 @@ echo "DOS Emulator Test Suite"
 echo "======================"
 
 # Check if emulator exists
-if [ ! -f "../msdos_improved" ]; then
-    echo "Error: msdos_improved not found. Building..."
+if [ ! -f "../msdos" ]; then
+    echo "Error: msdos not found. Building..."
     cd ..
-    make msdos_improved
+    make msdos
     cd tests
 fi
 
@@ -20,7 +20,7 @@ echo "✓ Emulator found"
 echo
 echo "Test 1: Simple exit"
 printf '\xB4\x4C\xB0\x00\xCD\x21' > simple_exit.com
-if ../msdos_improved simple_exit.com >/dev/null 2>&1; then
+if ../msdos simple_exit.com >/dev/null 2>&1; then
     echo "✅ PASSED"
 else
     echo "❌ FAILED"
@@ -31,7 +31,7 @@ rm -f simple_exit.com
 echo
 echo "Test 2: Character output"
 printf '\xB4\x02\xB2\x41\xCD\x21\xB4\x4C\xCD\x21' > char_test.com
-output=$( (../msdos_improved char_test.com >/tmp/test_out 2>/dev/null; cat /tmp/test_out) || true)
+output=$( (../msdos char_test.com >/tmp/test_out 2>/dev/null; cat /tmp/test_out) || true)
 if [[ "$output" == *"A"* ]]; then
     echo "✅ PASSED"
 else
@@ -44,7 +44,7 @@ echo
 echo "Test 3: Multiple character output"
 # Output "HI" and exit
 printf '\xB4\x02\xB2\x48\xCD\x21\xB2\x49\xCD\x21\xB4\x4C\xCD\x21' > multi_char.com
-output=$( (../msdos_improved multi_char.com >/tmp/test_out 2>/dev/null; cat /tmp/test_out) || true)
+output=$( (../msdos multi_char.com >/tmp/test_out 2>/dev/null; cat /tmp/test_out) || true)
 if [[ "$output" == *"HI"* ]]; then
     echo "✅ PASSED"
 else
@@ -57,7 +57,7 @@ echo
 echo "Test 4: Prompt detection"
 # Output CR LF > sequence
 printf '\xB4\x02\xB2\x0D\xCD\x21\xB2\x0A\xCD\x21\xB2\x3E\xCD\x21\xB4\x4C\xCD\x21' > prompt_test.com
-../msdos_improved prompt_test.com >/tmp/test_out 2>/dev/null
+../msdos prompt_test.com >/tmp/test_out 2>/dev/null
 if [ -f /tmp/test_out ] && xxd /tmp/test_out | grep -q "0d0a 3e"; then
     echo "✅ PASSED"
 else
@@ -70,7 +70,7 @@ echo
 echo "Test 5: DOS version call"
 # Get DOS version and exit
 printf '\xB4\x30\xCD\x21\xB4\x4C\xCD\x21' > version_test.com
-if ../msdos_improved version_test.com >/dev/null 2>&1; then
+if ../msdos version_test.com >/dev/null 2>&1; then
     echo "✅ PASSED"
 else
     echo "❌ FAILED"
@@ -82,7 +82,7 @@ echo
 echo "Test 6: Non-blocking input"
 # Try to read input with function 06h, then exit
 printf '\xB4\x06\xB2\xFF\xCD\x21\xB4\x4C\xCD\x21' > input_test.com
-output=$(echo "" | timeout 5 ../msdos_improved input_test.com 2>/dev/null || true)
+output=$(echo "" | timeout 5 ../msdos input_test.com 2>/dev/null || true)
 # Should exit without hanging
 echo "✅ PASSED (didn't hang)"
 rm -f input_test.com
@@ -92,7 +92,7 @@ echo
 echo "Test 7: Pipe input test"
 # Read one character and echo it
 printf '\xB4\x01\xCD\x21\xB4\x02\x88\xC2\xCD\x21\xB4\x4C\xCD\x21' > echo_test.com
-output=$(echo "X" | (../msdos_improved echo_test.com >/tmp/test_out 2>/dev/null; cat /tmp/test_out) || true)
+output=$(echo "X" | (../msdos echo_test.com >/tmp/test_out 2>/dev/null; cat /tmp/test_out) || true)
 if [[ "$output" == *"X"* ]]; then
     echo "✅ PASSED"
 else
@@ -104,7 +104,7 @@ rm -f echo_test.com /tmp/test_out
 echo
 echo "Test 8: Debug mode"
 printf '\xB4\x02\xB2\x41\xCD\x21\xB4\x4C\xCD\x21' > debug_test.com
-output=$(../msdos_improved debug_test.com -d 2>&1 >/dev/null || true)
+output=$(../msdos debug_test.com -d 2>&1 >/dev/null || true)
 if [[ "$output" == *"DOS INT 21h"* ]]; then
     echo "✅ PASSED"
 else

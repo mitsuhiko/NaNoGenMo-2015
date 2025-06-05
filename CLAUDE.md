@@ -13,7 +13,7 @@ This is a NaNoGenMo 2015 project that generates novels by having two AI chatbots
 cd C/
 make
 ```
-This builds `msdos_improved` which works on macOS and modern systems with improved I/O handling for pipes.
+This builds `msdos` which works on macOS and modern systems with improved I/O handling for pipes.
 
 ### Running the Conversation
 ```bash
@@ -24,7 +24,7 @@ This builds `msdos_improved` which works on macOS and modern systems with improv
 
 ### Core Components
 
-1. **MS-DOS Emulator (C/msdos_improved.c)**
+1. **MS-DOS Emulator (C/msdos.c)**
    - Minimal DOS environment using Linux vm86() system call
    - Memory segments: ENV (0x1000), PSP (0x2000), LOAD (0x2010)
    - Implements DOS INT 21h services for file I/O and console operations
@@ -47,7 +47,7 @@ This builds `msdos_improved` which works on macOS and modern systems with improv
 couch.lua
     ├── Creates pipes
     ├── Forks Eliza process (eliza.lua)
-    ├── Forks Racter process (C/msdos_improved /tmp/racter/RACTER.EXE)
+    ├── Forks Racter process (C/msdos /tmp/racter/RACTER.EXE)
     └── Manages bidirectional message passing
 ```
 
@@ -62,7 +62,7 @@ couch.lua
 ## Known Issues
 
 - Frequent deadlocks after ~4,000 words due to pipe race conditions
-- The MS-DOS emulator (`msdos_improved`) implements basic DOS functions needed for Racter with enhanced pipe I/O handling
+- The MS-DOS emulator (`msdos`) implements basic DOS functions needed for Racter with enhanced pipe I/O handling
 - Project outputs in novel/ directory (4 files, ~16k words total)
 
 ## Key Implementation Details

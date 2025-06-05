@@ -165,7 +165,7 @@ def run_pipe_test():
         # Test 1: Run Racter alone
         print("Testing Racter simulator...")
         racter_proc = subprocess.Popen(
-            ["../msdos_improved", racter_prog],
+            ["../msdos", racter_prog],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -187,7 +187,7 @@ def run_pipe_test():
         # Test 2: Run Eliza alone
         print("\nTesting Eliza simulator...")
         eliza_proc = subprocess.Popen(
-            ["../msdos_improved", eliza_prog],
+            ["../msdos", eliza_prog],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -219,7 +219,7 @@ def run_stress_test():
     
     try:
         proc = subprocess.Popen(
-            ["../msdos_improved", stress_prog],
+            ["../msdos", stress_prog],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

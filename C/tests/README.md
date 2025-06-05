@@ -1,6 +1,6 @@
 # DOS Emulator Test Suite
 
-This directory contains comprehensive tests for the `msdos_improved` DOS emulator.
+This directory contains comprehensive tests for the `msdos` DOS emulator.
 
 ## Overview
 
@@ -122,7 +122,7 @@ Example:
 ```bash
 echo "Test N: Description"
 printf '\xB4\x02\xB2\x41\xCD\x21\xB4\x4C\xCD\x21' > test.com
-output=$(timeout 5 ../msdos_improved test.com 2>/dev/null || true)
+output=$(timeout 5 ../msdos test.com 2>/dev/null || true)
 if [[ "$output" == *"A"* ]]; then
     echo "✅ PASSED"
 else
@@ -162,7 +162,7 @@ def test_new_feature(self):
 ### Debug Information
 Use debug mode to see detailed DOS function calls:
 ```bash
-../msdos_improved test_program.com -d
+../msdos test_program.com -d
 ```
 
 ## Common Issues
@@ -184,7 +184,7 @@ Use debug mode to see detailed DOS function calls:
 
 ## Integration with Main Project
 
-These tests validate that `msdos_improved` can properly handle:
+These tests validate that `msdos` can properly handle:
 1. Racter's DOS function calls
 2. Pipe communication with couch.lua
 3. Prompt detection for conversation flow
