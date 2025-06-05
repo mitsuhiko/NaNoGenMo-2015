@@ -36,7 +36,7 @@ The original MS-DOS emulator (`original.c`) uses the Linux `vm86()` system call 
 ## How it works
 
 - The Docker container runs Ubuntu 20.04 with the necessary development tools
-- It compiles the original DOS emulator (`original_linux.c`) which uses `vm86()`
+- It compiles the original DOS emulator (`msdos.c`) which uses `vm86()`
 - The emulator creates a minimal DOS environment and runs `RACTER.EXE`
 - The `--privileged` flag is needed for the `vm86()` system call to work
 
@@ -44,8 +44,7 @@ The original MS-DOS emulator (`original.c`) uses the Linux `vm86()` system call 
 
 - `Dockerfile` - Container definition
 - `run-docker.sh` - Build and run script  
-- `C/original_linux.c` - The working DOS emulator (cleaned up from `original.c`)
-- `C/original_test.c` - Test utility to examine EXE files
+- `C/msdos.c` - The working DOS emulator (cleaned up from the original)
 
 ## Troubleshooting
 
